@@ -76,7 +76,7 @@ function formatUSD(value: number): string {
   return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
-export function CalculationsPanel({ siteId, components, siteAreaM2 = 0 }: CalculationsPanelProps) {
+export function CalculationsPanel({ siteId: _siteId, components, siteAreaM2 = 0 }: CalculationsPanelProps) {
   const [capacity, setCapacity] = useState<CapacityResult | null>(null)
   const [landUse, setLandUse] = useState<LandUseResult | null>(null)
   const [cost, setCost] = useState<CostResult | null>(null)

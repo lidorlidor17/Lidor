@@ -102,9 +102,9 @@ export function BESSComponent3D({
 
   const labelY = boxH + 0.8
   const displayName =
-    component.name.length > 18
-      ? component.name.slice(0, 16) + '…'
-      : component.name
+    component.label.length > 18
+      ? component.label.slice(0, 16) + '…'
+      : component.label
 
   return (
     <group position={[worldX, 0, worldZ]} rotation={rotation}>
