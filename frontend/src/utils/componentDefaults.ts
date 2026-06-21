@@ -96,6 +96,24 @@ export const COMPONENT_DEFAULTS: Record<
     color: '#dc2626',
     description: 'גבול האתר',
   },
+  fire_suppression: {
+    label: 'Fire Suppression',
+    labelHe: 'מערכת כיבוי אש',
+    width: 40,
+    height: 40,
+    properties: {},
+    color: '#ef4444',
+    description: 'מערכת כיבוי אש',
+  },
+  grounding_grid: {
+    label: 'Grounding Grid',
+    labelHe: 'רשת הארקה',
+    width: 80,
+    height: 80,
+    properties: {},
+    color: '#eab308',
+    description: 'רשת הארקה',
+  },
 }
 
 /**

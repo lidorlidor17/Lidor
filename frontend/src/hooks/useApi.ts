@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import axios, { AxiosError } from 'axios'
+import { AxiosError } from 'axios'
 
 export function useApi<T>() {
   const [data, setData] = useState<T | null>(null)

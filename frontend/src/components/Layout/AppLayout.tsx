@@ -5,7 +5,7 @@ interface AppLayoutProps {
   showSidebar?: boolean
 }
 
-export function AppLayout({ children, showSidebar = false }: AppLayoutProps) {
+export function AppLayout({ children, showSidebar: _showSidebar = false }: AppLayoutProps) {
   return (
     <div style={{
       display: 'flex',
