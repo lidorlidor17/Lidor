@@ -14,6 +14,8 @@ const COMPONENT_NAMES_HE: Record<ComponentType, string> = {
   road: 'דרך גישה',
   text_annotation: 'טקסט',
   boundary: 'גבול אתר',
+  fire_suppression: 'מערכת כיבוי אש',
+  grounding_grid: 'רשת הארקה',
 }
 
 const COMPONENT_COLORS_DISPLAY: Record<ComponentType, string> = {
@@ -26,6 +28,8 @@ const COMPONENT_COLORS_DISPLAY: Record<ComponentType, string> = {
   road: '#4b5563',
   text_annotation: '#f0c040',
   boundary: '#ef4444',
+  fire_suppression: '#ef4444',
+  grounding_grid: '#eab308',
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
