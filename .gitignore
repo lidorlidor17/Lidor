@@ -16,3 +16,4 @@ backend/data/
 .pytest_cache/
 coverage/
 *.log
+.claude/

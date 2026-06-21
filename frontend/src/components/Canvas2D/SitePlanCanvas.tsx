@@ -15,6 +15,8 @@ const COMPONENT_COLORS: Record<ComponentType, string> = {
   road: '#4b5563',
   text_annotation: 'transparent',
   boundary: 'transparent',
+  fire_suppression: '#ef4444',
+  grounding_grid: '#eab308',
 }
 
 const COMPONENT_LABELS: Record<ComponentType, string> = {
@@ -27,6 +29,8 @@ const COMPONENT_LABELS: Record<ComponentType, string> = {
   road: 'Road',
   text_annotation: 'Text',
   boundary: 'Boundary',
+  fire_suppression: 'Fire',
+  grounding_grid: 'Ground',
 }
 
 const DEFAULT_SIZES: Record<ComponentType, { width: number; height: number }> = {
@@ -39,6 +43,8 @@ const DEFAULT_SIZES: Record<ComponentType, { width: number; height: number }> = 
   road: { width: 150, height: 30 },
   text_annotation: { width: 100, height: 30 },
   boundary: { width: 200, height: 150 },
+  fire_suppression: { width: 40, height: 40 },
+  grounding_grid: { width: 80, height: 80 },
 }
 
 interface GhostComponent {
