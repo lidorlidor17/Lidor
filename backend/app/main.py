@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine, Base
-from .routers import sites, components, calculations, reports, excel_export
+from .routers import sites, components, calculations, reports, excel_export, layout
 
 # Create all database tables on startup
 Base.metadata.create_all(bind=engine)
@@ -25,6 +25,7 @@ app.include_router(components.router, prefix="/api")
 app.include_router(calculations.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(excel_export.router, prefix="/api")
+app.include_router(layout.router)  # prefix is /api/layout (already set in router)
 
 
 @app.get("/health")
