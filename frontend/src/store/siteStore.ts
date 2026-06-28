@@ -1,18 +1,20 @@
 import { create } from 'zustand'
-import type { Project, ComponentInstance, DrawingMode } from '../types'
+import type { Project, ComponentInstance, DrawingMode, ComponentTypeDefinition } from '../types'
 
 interface SiteStore {
   projects: Project[]
   activeProject: Project | null
   components: ComponentInstance[]
+  componentTypes: ComponentTypeDefinition[]
   drawingMode: DrawingMode
-  placingTypeId: string | null   // 'battery-container' when in place mode
+  placingTypeId: string | null
   selectedComponentId: string | null
   showGrid: boolean
 
   setProjects: (projects: Project[]) => void
   setActiveProject: (project: Project | null) => void
   setComponents: (components: ComponentInstance[]) => void
+  setComponentTypes: (types: ComponentTypeDefinition[]) => void
   addComponent: (comp: ComponentInstance) => void
   updateComponent: (id: string, updates: Partial<ComponentInstance>) => void
   removeComponent: (id: string) => void
@@ -26,6 +28,7 @@ export const useSiteStore = create<SiteStore>((set) => ({
   projects: [],
   activeProject: null,
   components: [],
+  componentTypes: [],
   drawingMode: 'select',
   placingTypeId: null,
   selectedComponentId: null,
@@ -34,6 +37,7 @@ export const useSiteStore = create<SiteStore>((set) => ({
   setProjects: (projects) => set({ projects }),
   setActiveProject: (project) => set({ activeProject: project }),
   setComponents: (components) => set({ components }),
+  setComponentTypes: (types) => set({ componentTypes: types }),
   addComponent: (comp) => set((s) => ({ components: [...s.components, comp] })),
   updateComponent: (id, updates) =>
     set((s) => ({

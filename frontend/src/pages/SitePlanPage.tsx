@@ -4,12 +4,75 @@ import { ComponentPalette } from '../components/Toolbar/ComponentPalette'
 import { SitePlanCanvas } from '../components/Canvas2D/SitePlanCanvas'
 import { useSiteStore } from '../store/siteStore'
 import { projectsApi, componentsApi } from '../api/client'
+import type { ComponentInstance, FieldValue } from '../types'
+
+function FieldEditor({
+  comp,
+  onFieldBlur,
+  onDelete,
+}: {
+  comp: ComponentInstance
+  onFieldBlur: (fieldKey: string, value: string) => void
+  onDelete: () => void
+}) {
+  const [values, setValues] = useState<Record<string, string>>(
+    Object.fromEntries(comp.field_values.map((fv) => [fv.field_key, fv.value]))
+  )
+
+  // Sync local state when selected component changes
+  useEffect(() => {
+    setValues(Object.fromEntries(comp.field_values.map((fv: FieldValue) => [fv.field_key, fv.value])))
+  }, [comp.id])
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '3px 6px', fontSize: 11,
+    border: '1px solid #cbd5e1', borderRadius: 4, outline: 'none',
+    fontFamily: 'inherit', boxSizing: 'border-box', background: '#fff',
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1917', marginBottom: 4 }}>
+        {comp.name}
+      </div>
+      <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 10 }}>
+        {comp.component_type_id} · ({Math.round(comp.x)}, {Math.round(comp.y)})
+      </div>
+
+      {comp.field_values.map((fv) => (
+        <div key={fv.field_key} style={{ marginBottom: 8 }}>
+          <label style={{ fontSize: 10, color: '#64748b', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+            {fv.label}{fv.unit ? ` (${fv.unit})` : ''}
+          </label>
+          <input
+            type="text"
+            value={values[fv.field_key] ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, [fv.field_key]: e.target.value }))}
+            onBlur={() => onFieldBlur(fv.field_key, values[fv.field_key] ?? '')}
+            style={inputStyle}
+          />
+        </div>
+      ))}
+
+      <button
+        onClick={onDelete}
+        style={{
+          width: '100%', padding: '6px 0', fontSize: 12, marginTop: 4,
+          background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4,
+          color: '#dc2626', cursor: 'pointer',
+        }}
+      >
+        Delete
+      </button>
+    </div>
+  )
+}
 
 export function SitePlanPage() {
   const { id } = useParams<{ id: string }>()
   const { setActiveProject, setComponents, activeProject, showGrid, toggleGrid,
     drawingMode, stopPlacing, selectedComponentId, setSelectedComponentId,
-    components, removeComponent } = useSiteStore()
+    components, removeComponent, updateComponent } = useSiteStore()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +115,16 @@ export function SitePlanPage() {
     await componentsApi.delete(id, selectedComponentId)
     removeComponent(selectedComponentId)
     setSelectedComponentId(null)
+  }
+
+  const handleFieldBlur = async (fieldKey: string, value: string) => {
+    if (!id || !selectedComponentId) return
+    try {
+      const resp = await componentsApi.updateFields(id, selectedComponentId, [{ field_key: fieldKey, value }])
+      updateComponent(selectedComponentId, { field_values: resp.data.field_values })
+    } catch (err) {
+      console.error('Failed to save field', err)
+    }
   }
 
   const selectedComp = components.find((c) => c.id === selectedComponentId)
@@ -126,42 +199,11 @@ export function SitePlanPage() {
             Properties
           </p>
           {selectedComp ? (
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1917', marginBottom: 6 }}>
-                {selectedComp.name}
-              </div>
-              <div style={{ fontSize: 11, color: '#78716c', marginBottom: 12 }}>
-                Type: {selectedComp.component_type_id}
-              </div>
-              <div style={{ fontSize: 11, color: '#78716c', marginBottom: 2 }}>
-                Position: ({Math.round(selectedComp.x)}, {Math.round(selectedComp.y)})
-              </div>
-              <div style={{ fontSize: 11, color: '#78716c', marginBottom: 12 }}>
-                Size: {selectedComp.width} × {selectedComp.height}
-              </div>
-              {selectedComp.field_values.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  {selectedComp.field_values.map((fv) => (
-                    <div key={fv.field_key} style={{ marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, color: '#64748b' }}>{fv.label}: </span>
-                      <span style={{ fontSize: 11, color: '#1c1917', fontWeight: 500 }}>
-                        {fv.value || '—'}{fv.unit ? ` ${fv.unit}` : ''}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <button
-                onClick={handleDeleteSelected}
-                style={{
-                  width: '100%', padding: '6px 0', fontSize: 12,
-                  background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4,
-                  color: '#dc2626', cursor: 'pointer',
-                }}
-              >
-                Delete
-              </button>
-            </div>
+            <FieldEditor
+              comp={selectedComp}
+              onFieldBlur={handleFieldBlur}
+              onDelete={handleDeleteSelected}
+            />
           ) : (
             <p style={{ fontSize: 12, color: '#94a3b8' }}>
               Click a component to select it.

@@ -3,12 +3,33 @@ import { Stage, Layer, Rect, Text, Group, Line } from 'react-konva'
 import type Konva from 'konva'
 import { useSiteStore } from '../../store/siteStore'
 import { componentsApi } from '../../api/client'
-import type { ComponentInstance } from '../../types'
+import type { ComponentInstance, ComponentTypeDefinition } from '../../types'
 
-const BATTERY_COLOR = '#f97316'
-const BATTERY_SELECTED_STROKE = '#1d4ed8'
+const SELECTED_STROKE = '#1d4ed8'
 const GRID_SIZE = 20
-const GHOST_OPACITY = 0.45
+const GHOST_OPACITY = 0.4
+// 1 pixel = 0.1 m  →  200px = 20m
+const PIXELS_PER_METER = 10
+const SCALE_BAR_METERS = 20
+
+const TYPE_LABELS: Record<string, string> = {
+  'battery-container': 'BESS',
+  'pcs-inverter': 'PCS',
+  'transformer': 'XFMR',
+  'rmu': 'RMU',
+  'electrical-panel': 'PANEL',
+  'network-switch': 'SW',
+  'ems-plc-dio-controller': 'EMS',
+}
+
+const TYPE_PRIMARY_FIELD: Record<string, string> = {
+  'battery-container': 'capacityKWh',
+  'pcs-inverter': 'ratedPowerKW',
+  'transformer': 'ratedPowerKVA',
+  'rmu': 'ratedVoltage',
+  'electrical-panel': 'ratedCurrent',
+  'network-switch': 'numberOfRJ45Ports',
+}
 
 interface Props {
   projectId: string
@@ -16,21 +37,26 @@ interface Props {
   height: number
 }
 
-function BatteryShape({
+function ComponentShape({
   comp,
+  typeDef,
   isSelected,
   onSelect,
   onDragEnd,
 }: {
   comp: ComponentInstance
+  typeDef: ComponentTypeDefinition | undefined
   isSelected: boolean
   onSelect: (id: string) => void
   onDragEnd: (id: string, x: number, y: number) => void
 }) {
-  const w = comp.width ?? 235
-  const h = comp.height ?? 138
-  const capacityFv = comp.field_values.find((fv) => fv.field_key === 'capacityKWh')
-  const caption = capacityFv ? `${capacityFv.value} kWh` : ''
+  const w = comp.width ?? typeDef?.default_width ?? 235
+  const h = comp.height ?? typeDef?.default_height ?? 138
+  const color = typeDef?.default_color ?? '#94a3b8'
+  const label = TYPE_LABELS[comp.component_type_id] ?? comp.component_type_id.toUpperCase().slice(0, 4)
+  const primaryKey = TYPE_PRIMARY_FIELD[comp.component_type_id]
+  const primaryFv = primaryKey ? comp.field_values.find((fv) => fv.field_key === primaryKey) : null
+  const caption = primaryFv ? `${primaryFv.value} ${primaryFv.unit}`.trim() : ''
 
   return (
     <Group
@@ -44,95 +70,74 @@ function BatteryShape({
       }
     >
       <Rect
-        width={w}
-        height={h}
-        fill={BATTERY_COLOR}
-        opacity={0.25}
-        stroke={isSelected ? BATTERY_SELECTED_STROKE : BATTERY_COLOR}
+        width={w} height={h}
+        fill={color} opacity={0.22}
+        stroke={isSelected ? SELECTED_STROKE : color}
         strokeWidth={isSelected ? 2.5 : 1.5}
         cornerRadius={4}
       />
       <Text
-        text="BESS"
-        x={0}
-        y={h / 2 - 14}
-        width={w}
-        align="center"
-        fontSize={14}
-        fontStyle="bold"
-        fill="#1c1917"
+        text={label}
+        x={0} y={h / 2 - 14} width={w}
+        align="center" fontSize={14} fontStyle="bold" fill="#1c1917"
       />
       {caption ? (
-        <Text
-          text={caption}
-          x={0}
-          y={h / 2 + 2}
-          width={w}
-          align="center"
-          fontSize={11}
-          fill="#44403c"
-        />
+        <Text text={caption} x={0} y={h / 2 + 2} width={w} align="center" fontSize={11} fill="#44403c" />
       ) : null}
-      <Text
-        text={comp.name}
-        x={0}
-        y={h + 4}
-        width={w}
-        align="center"
-        fontSize={11}
-        fill="#1c1917"
-      />
+      <Text text={comp.name} x={0} y={h + 4} width={w} align="center" fontSize={11} fill="#1c1917" />
     </Group>
   )
 }
 
 function GridLines({ width, height }: { width: number; height: number }) {
-  const vLines = []
-  const hLines = []
-  for (let x = 0; x < width; x += GRID_SIZE) {
-    vLines.push(
-      <Line key={`v${x}`} points={[x, 0, x, height]} stroke="#e2e8f0" strokeWidth={0.5} />
-    )
-  }
-  for (let y = 0; y < height; y += GRID_SIZE) {
-    hLines.push(
-      <Line key={`h${y}`} points={[0, y, width, y]} stroke="#e2e8f0" strokeWidth={0.5} />
-    )
-  }
+  const lines = []
+  for (let x = 0; x < width; x += GRID_SIZE)
+    lines.push(<Line key={`v${x}`} points={[x, 0, x, height]} stroke="#e2e8f0" strokeWidth={0.5} />)
+  for (let y = 0; y < height; y += GRID_SIZE)
+    lines.push(<Line key={`h${y}`} points={[0, y, width, y]} stroke="#e2e8f0" strokeWidth={0.5} />)
+  return <>{lines}</>
+}
+
+function ScaleBar({ canvasHeight }: { canvasHeight: number }) {
+  const barPx = SCALE_BAR_METERS * PIXELS_PER_METER
+  const x = 20
+  const y = canvasHeight - 28
   return (
-    <>
-      {vLines}
-      {hLines}
-    </>
+    <Group x={x} y={y} listening={false}>
+      <Rect x={0} y={-2} width={barPx + 4} height={18} fill="rgba(255,255,255,0.75)" cornerRadius={3} />
+      <Line points={[2, 10, barPx + 2, 10]} stroke="#64748b" strokeWidth={2} />
+      <Line points={[2, 5, 2, 15]} stroke="#64748b" strokeWidth={2} />
+      <Line points={[barPx + 2, 5, barPx + 2, 15]} stroke="#64748b" strokeWidth={2} />
+      <Text text={`${SCALE_BAR_METERS} m`} x={barPx / 2 - 10} y={0} fontSize={10} fill="#475569" />
+    </Group>
   )
 }
 
 export function SitePlanCanvas({ projectId, width, height }: Props) {
-  const { components, drawingMode, placingTypeId, selectedComponentId, showGrid,
+  const { components, componentTypes, drawingMode, placingTypeId, selectedComponentId, showGrid,
     addComponent, updateComponent, setSelectedComponentId, stopPlacing } = useSiteStore()
 
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
   const stageRef = useRef<Konva.Stage>(null)
 
-  // ESC cancels placement mode
+  const placingType = componentTypes.find((ct) => ct.id === placingTypeId)
+  const ghostW = placingType?.default_width ?? 235
+  const ghostH = placingType?.default_height ?? 138
+  const ghostColor = placingType?.default_color ?? '#94a3b8'
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') stopPlacing()
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') stopPlacing() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [stopPlacing])
 
   const handleMouseMove = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
-      if (drawingMode !== 'place_component') {
-        setGhost(null)
-        return
-      }
+      if (drawingMode !== 'place_component') { setGhost(null); return }
       const pos = e.target.getStage()?.getPointerPosition()
-      if (pos) setGhost({ x: pos.x - (235 / 2), y: pos.y - (138 / 2) })
+      if (pos) setGhost({ x: pos.x - ghostW / 2, y: pos.y - ghostH / 2 })
     },
-    [drawingMode]
+    [drawingMode, ghostW, ghostH]
   )
 
   const handleMouseLeave = useCallback(() => setGhost(null), [])
@@ -140,29 +145,27 @@ export function SitePlanCanvas({ projectId, width, height }: Props) {
   const handleStageClick = useCallback(
     async (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (drawingMode !== 'place_component' || !placingTypeId) return
-      // Prevent clicks on existing shapes from triggering placement
       if (e.target !== e.target.getStage()) return
-
       const pos = e.target.getStage()?.getPointerPosition()
       if (!pos) return
 
-      const x = pos.x - (235 / 2)
-      const y = pos.y - (138 / 2)
-      const count = components.length + 1
+      const x = pos.x - ghostW / 2
+      const y = pos.y - ghostH / 2
+      const typeLabel = TYPE_LABELS[placingTypeId] ?? placingTypeId
+      const count = components.filter((c) => c.component_type_id === placingTypeId).length + 1
 
       try {
         const resp = await componentsApi.add(projectId, {
           component_type_id: placingTypeId,
-          name: `Battery ${count}`,
-          x,
-          y,
+          name: `${typeLabel} ${count}`,
+          x, y,
         })
         addComponent(resp.data)
       } catch (err) {
         console.error('Failed to place component', err)
       }
     },
-    [drawingMode, placingTypeId, projectId, components.length, addComponent]
+    [drawingMode, placingTypeId, projectId, components, addComponent, ghostW, ghostH]
   )
 
   const handleDragEnd = useCallback(
@@ -182,8 +185,7 @@ export function SitePlanCanvas({ projectId, width, height }: Props) {
   return (
     <Stage
       ref={stageRef}
-      width={width}
-      height={height}
+      width={width} height={height}
       style={{ cursor: isPlacing ? 'crosshair' : 'default', background: '#f8fafc' }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -193,40 +195,33 @@ export function SitePlanCanvas({ projectId, width, height }: Props) {
         {showGrid && <GridLines width={width} height={height} />}
 
         {components.map((comp) => (
-          <BatteryShape
+          <ComponentShape
             key={comp.id}
             comp={comp}
+            typeDef={componentTypes.find((ct) => ct.id === comp.component_type_id)}
             isSelected={comp.id === selectedComponentId}
             onSelect={setSelectedComponentId}
             onDragEnd={handleDragEnd}
           />
         ))}
 
-        {/* Ghost preview while placing */}
         {isPlacing && ghost && (
           <Group x={ghost.x} y={ghost.y} listening={false}>
             <Rect
-              width={235}
-              height={138}
-              fill={BATTERY_COLOR}
-              opacity={GHOST_OPACITY}
-              stroke={BATTERY_COLOR}
-              strokeWidth={1.5}
-              dash={[6, 4]}
-              cornerRadius={4}
+              width={ghostW} height={ghostH}
+              fill={ghostColor} opacity={GHOST_OPACITY}
+              stroke={ghostColor} strokeWidth={1.5}
+              dash={[6, 4]} cornerRadius={4}
             />
             <Text
-              text="BESS"
-              x={0}
-              y={55}
-              width={235}
-              align="center"
-              fontSize={14}
-              fontStyle="bold"
-              fill="#1c1917"
+              text={TYPE_LABELS[placingTypeId ?? ''] ?? '?'}
+              x={0} y={ghostH / 2 - 7} width={ghostW}
+              align="center" fontSize={14} fontStyle="bold" fill="#1c1917"
             />
           </Group>
         )}
+
+        <ScaleBar canvasHeight={height} />
       </Layer>
     </Stage>
   )

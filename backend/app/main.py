@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from .db_init import run_migrations
 from .routers.projects import router as projects_router
+from .routers.component_types import router as component_types_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(projects_router)
+app.include_router(component_types_router)
 
 
 @app.get("/health")

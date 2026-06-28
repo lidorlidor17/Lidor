@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Project, ComponentInstance } from '../types'
+import type { Project, ComponentInstance, ComponentTypeDefinition } from '../types'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
@@ -28,6 +28,13 @@ export const componentsApi = {
   updatePosition: (projectId: string, compId: string, x: number, y: number) =>
     api.patch<ComponentInstance>(`/api/projects/${projectId}/components/${compId}`, { x, y }),
 
+  updateFields: (projectId: string, compId: string, fields: { field_key: string; value: string }[]) =>
+    api.patch<ComponentInstance>(`/api/projects/${projectId}/components/${compId}/fields`, { fields }),
+
   delete: (projectId: string, compId: string) =>
     api.delete(`/api/projects/${projectId}/components/${compId}`),
+}
+
+export const componentTypesApi = {
+  list: () => api.get<ComponentTypeDefinition[]>('/api/component-types'),
 }

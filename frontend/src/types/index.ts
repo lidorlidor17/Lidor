@@ -1,3 +1,14 @@
+// ── Stage-2 additions ─────────────────────────────────────────────────────
+
+export interface ComponentTypeDefinition {
+  id: string
+  name: string
+  category: string
+  default_color: string
+  default_width: number
+  default_height: number
+}
+
 // ── Stage-1 types (migration-based schema) ────────────────────────────────
 
 export interface Project {

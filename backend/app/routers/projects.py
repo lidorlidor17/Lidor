@@ -8,6 +8,7 @@ from ..db_init import get_connection
 from ..schemas.project import (
     ProjectCreate, ProjectResponse,
     ComponentCreate, ComponentPositionUpdate, ComponentResponse, FieldValue,
+    ComponentFieldsUpdate,
 )
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -161,6 +162,24 @@ def update_component_position(project_id: str, comp_id: str, body: ComponentPosi
         conn.execute(
             "UPDATE components SET x = ?, y = ?, updated_at = datetime('now') WHERE id = ?",
             (body.x, body.y, comp_id)
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM components WHERE id = ?", (comp_id,)).fetchone()
+        return _row_to_component(conn, row)
+
+
+@router.patch("/{project_id}/components/{comp_id}/fields", response_model=ComponentResponse)
+def update_component_fields(project_id: str, comp_id: str, body: ComponentFieldsUpdate):
+    with get_connection() as conn:
+        _require_component(conn, project_id, comp_id)
+        for f in body.fields:
+            conn.execute(
+                "UPDATE component_field_values SET value = ? "
+                "WHERE component_id = ? AND field_key = ?",
+                (f.value, comp_id, f.field_key)
+            )
+        conn.execute(
+            "UPDATE components SET updated_at = datetime('now') WHERE id = ?", (comp_id,)
         )
         conn.commit()
         row = conn.execute("SELECT * FROM components WHERE id = ?", (comp_id,)).fetchone()

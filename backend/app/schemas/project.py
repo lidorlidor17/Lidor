@@ -50,3 +50,21 @@ class ComponentResponse(BaseModel):
     created_at: str
     updated_at: str
     field_values: list[FieldValue] = []
+
+
+class ComponentTypeResponse(BaseModel):
+    id: str
+    name: str
+    category: str
+    default_color: str
+    default_width: float
+    default_height: float
+
+
+class FieldUpdate(BaseModel):
+    field_key: str
+    value: str
+
+
+class ComponentFieldsUpdate(BaseModel):
+    fields: list[FieldUpdate]
