@@ -1,18 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .database import engine, Base
-from .routers import sites, components, calculations, reports, excel_export, layout, catalog
+from .db_init import run_migrations
+from .routers.projects import router as projects_router
 
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    run_migrations()
+    yield
+
 
 app = FastAPI(
-    title="BESS Site Planning API",
-    version="1.0.0",
-    description="Backend API for BESS site drawing, modeling, and engineering calculations.",
+    title="BESS Layout Tool API",
+    version="0.1.0",
+    description="Stage 1: place a Battery Container, save/load from SQLite.",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -23,18 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(sites.router, prefix="/api")
-app.include_router(components.router, prefix="/api")
-app.include_router(calculations.router, prefix="/api")
-app.include_router(reports.router, prefix="/api")
-app.include_router(excel_export.router, prefix="/api")
-app.include_router(layout.router)
-app.include_router(catalog.router)
+app.include_router(projects_router)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "0.1.0"}
 
 
 @app.exception_handler(Exception)

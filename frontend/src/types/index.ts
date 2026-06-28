@@ -1,18 +1,51 @@
-// Component types supported on the 2D site plan canvas
-export type ComponentType =
-  | 'battery_container'
-  | 'pcs'
-  | 'transformer'
-  | 'control_room'
-  | 'substation'
-  | 'fence'
-  | 'road'
-  | 'text_annotation'
-  | 'boundary'
-  | 'fire_suppression'
-  | 'grounding_grid'
+// ── Stage-1 types (migration-based schema) ────────────────────────────────
 
-// Legacy alias kept for compatibility with existing 3D components
+export interface Project {
+  id: string
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FieldValue {
+  field_key: string
+  value: string
+  label: string
+  unit: string
+}
+
+/** A component instance placed on the canvas. */
+export interface ComponentInstance {
+  id: string
+  project_id: string
+  component_type_id: string   // e.g. 'battery-container'
+  name: string
+  x: number
+  y: number
+  width: number | null
+  height: number | null
+  rotation: number
+  created_at: string
+  updated_at: string
+  field_values: FieldValue[]
+}
+
+export type DrawingMode = 'select' | 'place_component'
+
+export interface MousePosition {
+  x: number
+  y: number
+}
+
+// ── Legacy type aliases — kept so pre-Stage-1 files still compile ──────────
+// These are not used by the Stage-1 code paths.
+
+export type ComponentType =
+  | 'battery_container' | 'pcs' | 'transformer' | 'control_room'
+  | 'substation' | 'fence' | 'road' | 'text_annotation'
+  | 'boundary' | 'fire_suppression' | 'grounding_grid'
+
 export type BESSComponentType = ComponentType
 
 export interface ComponentProperties {
@@ -26,7 +59,6 @@ export interface ComponentProperties {
   [key: string]: unknown
 }
 
-// Legacy alias kept for compatibility
 export type BESSComponentProperties = ComponentProperties
 
 export interface BESSComponent {
@@ -57,12 +89,10 @@ export interface BESSSite {
 }
 
 export interface DrawingData {
-  scale: number   // meters per pixel (e.g. 0.5 = 50cm per pixel)
+  scale: number
   origin: { x: number; y: number }
   background?: string
 }
-
-export type DrawingMode = 'select' | 'place_component' | 'draw_boundary' | 'draw_road' | 'text'
 
 export interface CapacityResult {
   total_capacity_mwh: number
@@ -73,9 +103,4 @@ export interface CapacityResult {
   estimated_efficiency: number
   site_area_m2: number
   energy_density_mwh_per_ha: number
-}
-
-export interface MousePosition {
-  x: number
-  y: number
 }
