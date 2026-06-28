@@ -106,7 +106,7 @@ export function SitePlanPage() {
         <ComponentPalette />
 
         {/* Canvas */}
-        <div ref={containerRef} style={{ flex: 1, overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ flex: 1, overflow: 'hidden', background: '#f8fafc' }}>
           {id && (
             <SitePlanCanvas
               projectId={id}
