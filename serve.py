@@ -35,7 +35,7 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
 
     def guess_type(self, path):
         ext = os.path.splitext(str(path))[1].lower()
-        return MIME.get(ext, 'application/octet-stream'), None
+        return MIME.get(ext, 'application/octet-stream')
 
     def log_message(self, fmt, *args):
         pass
